@@ -26,12 +26,12 @@
 # Inc, 59 Temple Place - Suite 330, Boston, MA 02111-1307, EE.UU.
 #
 ##############################################################################
-# ARCHIVO             : source.py
+# ARCHIVO             : logger.py
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 05/05/2022.
+# FECHA DE CREACION   : 06/55/2022.
+# ULTIMA ACTUALIZACION: 11/05/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -43,11 +43,10 @@
 # DEDICATORIA: A mi hija Micaela Ruiz que me re aguanta.
 #=============================================================================
 # DESCRIPCION:
-#             Este archivo incluye la definicion del modulo source.
+#             Este archivo incluye la definicion del modulo logger.
 #
-#             Las funciones source permiten la recoleccion de termnales
-#             candidatas a ser incorporadas al procesod e migracion por
-#             presentar repros pendientes.
+#             Las funciones logger permiten el registro de logs de las
+#             actividades del bot.
 #
 #-------------------------------------------------------------------------------
 # ARCHIVO DE CABECERA: No aplica
@@ -56,10 +55,11 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# Buscar_candidatas() | dictionary | Busca terminales con repros pendientes y  |
-#                    las retorna junto al codigo de repro en un diccionario.   |
+# Verificar_archivo() | bool | Verifica si el archivo de log del dia existe y  |
+#                             de no ser asi lo genera.                         |
 #----------------+--------+----------------------------------------------------|
-# ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
+# Escribir_log   |  bool  | Escrive una linea con un mensaje en el rachivo     |
+#                           de logs.                                           |
 #================+========+====================================================|
 #
 #-------------------------------------------------------------------------------
@@ -74,9 +74,9 @@
 #*****************************************************************************
 #                             INCLUSIONES ESTANDAR
 #=============================================================================
-
-import files_bot.logger as log
-import files_bot.conection as data_conection
+import json
+from datetime import date
+import time
 
 #*****************************************************************************
 #                             INCLUSIONES PARA WINDOWS
@@ -110,52 +110,39 @@ import files_bot.conection as data_conection
 #***************************************************************************
 #                        FUNCIONES PARA LINUX
 #===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : bool verificar_archivo()
+# ACCION    : Verifica si el archivo de log del dia existe y
+#             de no ser asi lo genera.
+# PARAMETROS: void
+# DEVUELVE  : bool
 #---------------------------------------------------------------------------
-
-#---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-def Contar_repros(terminales_candidatas):
-    count = 0
+def Verificar_archivo():
     try:
-        for terminal, repros in terminales_candidatas.items():
-            count += len(repros)
+        filename = "./files_log/log-" + str(date.today()) + ".txt"
+        file_log = open(filename, 'r')
     except Exception as excepcion:
-        print("  Error - :", excepcion)
+        file_log = open(filename, 'w')
+        #print("  Error - Escribiendo log:", excepcion)
     finally:
-        return count
+        file_log.close()
 
 #---------------------------------------------------------------------------
-# FUNCION   : dictionary Buscar_candidatas(dictionary).
-# ACCION    : Busca terminales con repros pendientesy las retorna junto
-#             al codigo de repro en un diccionario.
-# PARAMETROS: dictionary.
-# DEVUELVE  : dictionary.
+# FUNCION   : bool Escribir_log(string).
+# ACCION    : Escrive una linea con un mensaje en el rachivo de logs.
+# PARAMETROS: string.
+# DEVUELVE  : bool
 #---------------------------------------------------------------------------
-def Buscar_candidatas(parametros):
-    terminales_candidatas = {}
-    consulta = parametros["data_conection"]["data_source"]["query"]
+def Escribir_log(texto):
     try:
-        print("  Buscando terminales candidatas...")
-        conexion = data_conection.Conectar(parametros, "data_source")
-        terminales_candidatas = data_conection.Ejecutar_consulta_origen(conexion, consulta)
-
-        print("  Terminales detectadas:", len(terminales_candidatas.keys()))
-        print("  Repros pendientes detectadas:", Contar_repros(terminales_candidatas))
-        print("  Subproceso finalizado...")
-
+        Verificar_archivo()
+        filename = "./files_log/log-" + str(date.today()) + ".txt"
+        file_log = open(filename, 'a')
+        mensaje = time.strftime('%H:%M:%S', time.localtime()) + " " + texto + "\n"
+        file_log.write(mensaje)
     except Exception as excepcion:
-        print("  Error - Carga de terminales candidatas:", excepcion)
+        print("  Error - Escribiendo log:", excepcion)
     finally:
-        conexion.close()
-        return terminales_candidatas
+        file_log.close()
 
 #---------------------------------------------------------------------------
 # FUNCION   :
@@ -163,7 +150,6 @@ def Buscar_candidatas(parametros):
 # PARAMETROS:
 # DEVUELVE  :
 #---------------------------------------------------------------------------
-
 
 #=============================================================================
 #                            FIN DE ARCHIVO

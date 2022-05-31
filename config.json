@@ -1,3 +1,71 @@
 {
-    "autor": "Norman Ruiz"
+    "nombre": "BotRepros",
+    "data_conection": {
+        "data_source": {
+            "driver": "{ODBC Driver 18 for SQL Server}",
+            "server": "localhost",
+            "database": "datasource",
+            "username": "reprosbot",
+            "password": "@Reprosbot2022",
+            "query": "SELECT [terminal] ,[repro] FROM [DataSource].[dbo].[reproxterminal$] AS rxt (NOLOCK)"
+        },
+        "data_destiny": {
+            "driver": "{ODBC Driver 18 for SQL Server}",
+            "server": "localhost",
+            "database": "automatizacion",
+            "username": "reprosbot",
+            "password": "@Reprosbot2022",
+            "query": "SELECT [terminal], [cant_solicitudes] FROM [automatizacion].[sis].[solicitudAutoini] AS sa (nolock)",
+            "nonquery_i": "INSERT INTO [sis].[solicitudAutoini] ([terminal], [estado], [informante], [prioridad_informante]) VALUES (?, 'Solitado', 'repros', ?)",
+            "nonquery_u": "UPDATE [sis].[solicitudAutoini] SET [cant_solicitudes] = ? ,[fecha_ultima_actualizacion] = getdate() WHERE [terminal] = ?"
+            }
+        },
+        "repros_prioridad" : {
+            "VI": 1,
+            "AM": 1,
+            "DI": 1,
+            "AR": 1,
+            "CA": 1,
+            "AC": 1,
+            "AU": 1,
+            "BI": 1,
+            "CD": 1,
+            "CF": 1,
+            "CL": 2,
+            "CP": 2,
+            "CR": 2,
+            "CS": 2,
+            "FL": 2,
+            "MP": 2,
+            "MR": 2,
+            "NA": 2,
+            "NE": 2,
+            "TA": 2,
+            "TP": 2,
+            "UN": 2,
+            "A1": 2,
+            "A2": 2,
+            "AG": 2,
+            "AA": 2,
+            "AL": 2,
+            "AN": 2,
+            "AT": 2,
+            "AZ": 2,
+            "BA": 2,
+            "BC": 2,
+            "BD": 2,
+            "BE": 2,
+            "CC": 2,
+            "CE": 2,
+            "CM": 2,
+            "CN": 2,
+            "CO": 2,
+            "CT": 2
+
+        },
+        "autor": {
+            "nombre": "Norman Ruiz",
+            "correo": "norman.ruiz@outlook.com.ar"
+        }
+
 }

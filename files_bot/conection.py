@@ -26,12 +26,12 @@
 # Inc, 59 Temple Place - Suite 330, Boston, MA 02111-1307, EE.UU.
 #
 ##############################################################################
-# ARCHIVO             : source.py
+# ARCHIVO             : conection.py
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 05/05/2022.
+# FECHA DE CREACION   : 11/55/2022.
+# ULTIMA ACTUALIZACION: 11/05/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -43,11 +43,10 @@
 # DEDICATORIA: A mi hija Micaela Ruiz que me re aguanta.
 #=============================================================================
 # DESCRIPCION:
-#             Este archivo incluye la definicion del modulo source.
+#             Este archivo incluye la definicion del modulo conection.
 #
-#             Las funciones source permiten la recoleccion de termnales
-#             candidatas a ser incorporadas al procesod e migracion por
-#             presentar repros pendientes.
+#             Las funciones conection permiten la iteraccion con la
+#             base de datos.
 #
 #-------------------------------------------------------------------------------
 # ARCHIVO DE CABECERA: No aplica
@@ -74,9 +73,7 @@
 #*****************************************************************************
 #                             INCLUSIONES ESTANDAR
 #=============================================================================
-
-import files_bot.logger as log
-import files_bot.conection as data_conection
+import pyodbc
 
 #*****************************************************************************
 #                             INCLUSIONES PARA WINDOWS
@@ -116,46 +113,23 @@ import files_bot.conection as data_conection
 # DEVUELVE  :
 #---------------------------------------------------------------------------
 
-#---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-def Contar_repros(terminales_candidatas):
-    count = 0
-    try:
-        for terminal, repros in terminales_candidatas.items():
-            count += len(repros)
-    except Exception as excepcion:
-        print("  Error - :", excepcion)
-    finally:
-        return count
+
 
 #---------------------------------------------------------------------------
-# FUNCION   : dictionary Buscar_candidatas(dictionary).
-# ACCION    : Busca terminales con repros pendientesy las retorna junto
-#             al codigo de repro en un diccionario.
+# FUNCION   : objeto Conectar(dictionary).
+# ACCION    : Abre la coneccion contra la base de datos.
 # PARAMETROS: dictionary.
-# DEVUELVE  : dictionary.
+# DEVUELVE  : objeto.
 #---------------------------------------------------------------------------
-def Buscar_candidatas(parametros):
-    terminales_candidatas = {}
-    consulta = parametros["data_conection"]["data_source"]["query"]
+def Conectar(parametros, ubicacion):
+    conexion = False
     try:
-        print("  Buscando terminales candidatas...")
-        conexion = data_conection.Conectar(parametros, "data_source")
-        terminales_candidatas = data_conection.Ejecutar_consulta_origen(conexion, consulta)
-
-        print("  Terminales detectadas:", len(terminales_candidatas.keys()))
-        print("  Repros pendientes detectadas:", Contar_repros(terminales_candidatas))
-        print("  Subproceso finalizado...")
-
+        cadena_de_conexion = 'DRIVER=' + parametros["data_conection"][ubicacion]["driver"] + ';SERVER=' + parametros["data_conection"][ubicacion]["server"] + ';DATABASE=' + parametros["data_conection"][ubicacion]["database"] + ';UID=' + parametros["data_conection"][ubicacion]["username"] + ';PWD=' + parametros["data_conection"][ubicacion]["password"] + ';TrustServerCertificate=yes'
+        conexion = pyodbc.connect(cadena_de_conexion)
     except Exception as excepcion:
-        print("  Error - Carga de terminales candidatas:", excepcion)
+        print("  Error - Conectando a base de datos:", excepcion)
     finally:
-        conexion.close()
-        return terminales_candidatas
+        return conexion
 
 #---------------------------------------------------------------------------
 # FUNCION   :
@@ -163,8 +137,124 @@ def Buscar_candidatas(parametros):
 # PARAMETROS:
 # DEVUELVE  :
 #---------------------------------------------------------------------------
+def Desconectar(conexion):
+    status = False
+    try:
+        conexion.close()
+        status = True
+    except Exception as excepcion:
+        print("  Error - Cerrando conexion a base de datos:", excepcion)
+    finally:
+        return status
 
+#---------------------------------------------------------------------------
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+def Ejecutar_consulta_origen(conexion, consulta):
+    data = {}
+    aux_terminal = None
+    aux_repro = []
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(consulta)
+        registro = cursor.fetchone()
+        if registro:
+            aux_terminal = str(int(registro[0]))
+        while registro:
+            if aux_terminal == str(int(registro[0])):
+                aux_repro.append(str(registro[1]).replace(' ', ''))
+            else:
+                data[aux_terminal] = list(aux_repro)
+                aux_terminal = str(int(registro[0]))
+                aux_repro.clear()
+                aux_repro.append(str(registro[1]).replace(' ', ''))
+            registro = cursor.fetchone()
+        data[aux_terminal] = list(aux_repro)
+    except Exception as excepcion:
+        print("  Error - Ejecutando consulta:", excepcion)
+    finally:
+        return data
+
+#---------------------------------------------------------------------------
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+def Ejecutar_consulta_destino(conexion, consulta):
+    data = {}
+
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(consulta)
+        registro = cursor.fetchone()
+        while registro:
+            data[registro.terminal] = registro.cant_solicitudes
+            registro = cursor.fetchone()
+    except Exception as excepcion:
+        print("  Error - Ejecutando consulta:", excepcion)
+    finally:
+        return data
+
+
+#---------------------------------------------------------------------------
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+def Insertar_nuevos(conexion, nonquery_i, terminal, prioridad):
+    status = 0
+    try:
+        cursor = conexion.cursor()
+        count = cursor.execute(nonquery_i, terminal, prioridad).rowcount
+        conexion.commit()
+        if count == 1:
+            status = 1
+    except Exception as excepcion:
+        mensaje = "Error - Carga de configuracion: " + excepcion
+        log.Escribir_log(mensaje)
+        print(" ", mensaje)
+    finally:
+        return status
+
+#---------------------------------------------------------------------------
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+def Actualizar_existentes(conexion, nonquery_u, terminal, solicitudes):
+    status = 0
+    try:
+        cursor = conexion.cursor()
+        count = cursor.execute(nonquery_u, solicitudes, terminal).rowcount
+        conexion.commit()
+        if count == 1:
+            status = 1
+    except Exception as excepcion:
+        mensaje = "Error - Carga de configuracion: " + excepcion
+        log.Escribir_log(mensaje)
+        print(" ", mensaje)
+    finally:
+        return status
 
 #=============================================================================
 #                            FIN DE ARCHIVO
 ##############################################################################
+
+
+
+# Some other example server values are
+# server = 'localhost\sqlexpress' # for a named instance
+# server = 'myserver,port' # to specify an alternate port
+
+
+#cursor.execute("SELECT @@version;")
+#row = cursor.fetchone()
+#while row:
+#    print(row[0])
+#    row = cursor.fetchone()
