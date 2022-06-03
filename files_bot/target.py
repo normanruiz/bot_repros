@@ -31,7 +31,7 @@
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 06/05/2022.
+# ULTIMA ACTUALIZACION: 03/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -56,7 +56,8 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# ejemplo()      |  void  | Hace algo para el ejemplo.                         |
+# Buscar_terminales_miembro() |  dict  | Busca terminales ya en proceso de     |
+#                                        migracion.                            |
 #----------------+--------+----------------------------------------------------|
 # ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
 #================+========+====================================================|
@@ -95,39 +96,49 @@ import files_bot.conection as data_conection
 # Sin especificar
 
 #***************************************************************************
-#                        FUNCIONES PARA WINDOWS
-#===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
-# Sin especificar
-
-#***************************************************************************
 #                        FUNCIONES PARA LINUX
 #===========================================================================
-# FUNCION   : list Buscar_terminales_miembro(string).
+# FUNCION   : dict Buscar_terminales_miembro(dict).
 # ACCION    : Busca terminales ya en proceso de migracion.
-# PARAMETROS: string.
-# DEVUELVE  : list.
+# PARAMETROS: dict, parametros de configuracion del bot.
+# DEVUELVE  : dict, coleccion con las terminales y su cantidad de solicitudes.
 #---------------------------------------------------------------------------
 def Buscar_terminales_miembro(parametros):
     terminales_miembro = {}
-    consulta = parametros["data_conection"]["data_destiny"]["query"]
+    ubicacion = "data_destiny"
+    consulta = parametros["data_conection"][ubicacion]["query"]
+    status = True
     try:
-        print("  Buscando terminales miembro...")
-        conexion = data_conection.Conectar(parametros, "data_destiny")
-        terminales_miembro = data_conection.Ejecutar_consulta_destino(conexion, consulta)
-        print("  Terminales detectadas:", len(terminales_miembro))
-        print("  Subproceso finalizado...")
-
+        mensaje = "Buscando terminales miembro..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        conexion = data_conection.Conectar(parametros, ubicacion)
+        if conexion:
+            terminales_miembro = data_conection.Ejecutar_consulta_destino(conexion, ubicacion, consulta)
+            mensaje = "Terminales detectadas:" + str(len(terminales_miembro))
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+            mensaje = "Subproceso finalizado..."
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+        else:
+            status = False
     except Exception as excepcion:
-        mensaje = "  Error - Carga de terminales miembro: " + excepcion
-        print(mensaje)
+        status = False
+        terminales_miembro = "fallido"
+        mensaje = "ERROR - Carga de terminales miembro:" + str(excepcion)
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
     finally:
-        conexion.close()
+        if not(status):
+            mensaje = "WARNING!!! - Subproceso interrumpido..."
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+
+        if conexion:
+            data_conection.Desconectar(conexion, ubicacion)
+        print()
+        log.Escribir_log("--------------------------------------------------------------------------------")
         return terminales_miembro
 
 #---------------------------------------------------------------------------
@@ -137,6 +148,16 @@ def Buscar_terminales_miembro(parametros):
 # DEVUELVE  :
 #---------------------------------------------------------------------------
 
+#***************************************************************************
+#                        FUNCIONES PARA WINDOWS
+#===========================================================================
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+
+# Sin especificar
 
 #=============================================================================
 #                            FIN DE ARCHIVO

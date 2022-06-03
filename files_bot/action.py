@@ -30,8 +30,8 @@
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 05/05/2022.
+# FECHA DE CREACION   : 05/05/2022.
+# ULTIMA ACTUALIZACION: 03/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -56,7 +56,8 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# ejemplo()      |  void  | Hace algo para el ejemplo.                         |
+# Anexar_lote()  |  bool  | Inserta y/o actualiza el nuevo lote de terminales  |
+#                           en el proceso de migracion.                        |
 #----------------+--------+----------------------------------------------------|
 # ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
 #================+========+====================================================|
@@ -95,47 +96,72 @@ import files_bot.conection as data_conection
 # Sin especificar
 
 #***************************************************************************
-#                        FUNCIONES PARA WINDOWS
-#===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
-# Sin especificar
-
-#***************************************************************************
 #                        FUNCIONES PARA LINUX
 #===========================================================================
-# FUNCION   : <valor de retorno> Anexar_lote().
-# ACCION    : Inserta el nuevo lote de terminales en el proceso de migracion.
-# PARAMETROS: void.
-# DEVUELVE  : Un array Terminales
+# FUNCION   : bool Anexar_lote(dict, dict).
+# ACCION    : Inserta y/o actualiza el nuevo lote de terminales en el proceso de migracion.
+# PARAMETROS: dict, parametros de configuracion del bot.
+#             dict, el lote de terminales a procesar.
+# DEVUELVE  : bool, True si el subproceso finalizo sin errores,
+#             o False en caso contrario
 #---------------------------------------------------------------------------
 def Anexar_lote(parametros, nuevo_lote):
-    status = 0
+    status = True
     count_i = 0
     count_u = 0
+    ubicacion = "data_destiny"
+    nonquery_i = parametros["data_conection"][ubicacion]["nonquery_i"]
+    nonquery_u = parametros["data_conection"][ubicacion]["nonquery_u"]
+    cursor = None
     try:
-        print("  Aplicando los cambios del nuevo lote...")
-        conexion = data_conection.Conectar(parametros, "data_destiny")
-        nonquery_i = parametros["data_conection"]["data_destiny"]["nonquery_i"]
-        nonquery_u = parametros["data_conection"]["data_destiny"]["nonquery_u"]
+        mensaje = "Aplicando los cambios del nuevo lote..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        conexion = data_conection.Conectar(parametros, ubicacion)
+        mensaje = "Ejecunatdo nonquerys contra " + ubicacion + "..."
+        log.Escribir_log(mensaje)
+        mensaje = "Nonquery insert: " + nonquery_i
+        log.Escribir_log(mensaje)
+        mensaje = "Nonquery update: " + nonquery_u
+        log.Escribir_log(mensaje)
+        mensaje = "Generando cursor... "
+        log.Escribir_log(mensaje)
+        cursor = conexion.cursor()
+        mensaje = "Comenzando escritura de datos..."
+        log.Escribir_log(mensaje)
         for terminal, accion in nuevo_lote.items():
             if accion[0] == 'i':
-                count_i += data_conection.Insertar_nuevos(conexion, nonquery_i, terminal, accion[1])
+                count_i += data_conection.Insertar_nuevos(conexion, cursor, nonquery_i, terminal, accion[1])
             else:
-                count_u += data_conection.Actualizar_existentes(conexion, nonquery_u, terminal, accion[1])
-        print("  Se incorporaron", count_i, "terminales...")
-        print("  Se resolicitaron", count_u, "terminales...")
-        print("  Subproceso finalizado...")
+                count_u += data_conection.Actualizar_existentes(conexion, cursor, nonquery_u, terminal, accion[1])
+        mensaje = "Escritura de datos finalizada..."
+        log.Escribir_log(mensaje)
+        mensaje = "Se incorporaron " + str(count_i) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Se resolicitaron " + str(count_u) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Subproceso finalizado..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
     except Exception as excepcion:
-        status = 1
+        status = False
         mensaje = "Error - Carga de configuracion: " + excepcion
         log.Escribir_log(mensaje)
         print(" ", mensaje)
     finally:
+        if not(status):
+            mensaje = "WARNING!!! - Subproceso interrumpido..."
+            print(" ", mensaje)
+            log.Escribir_log("--------------------------------------------------------------------------------")
+            log.Escribir_log(mensaje)
+        if cursor:
+            cursor.close()
+            mensaje = "Destruyendo cursor..."
+            log.Escribir_log(mensaje)
+        if conexion:
+            data_conection.Desconectar(conexion, ubicacion)
         return status
 
 #---------------------------------------------------------------------------
@@ -145,6 +171,16 @@ def Anexar_lote(parametros, nuevo_lote):
 # DEVUELVE  :
 #---------------------------------------------------------------------------
 
+#***************************************************************************
+#                        FUNCIONES PARA WINDOWS
+#===========================================================================
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+
+# Sin especificar
 
 #=============================================================================
 #                            FIN DE ARCHIVO

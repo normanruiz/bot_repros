@@ -1,0 +1,33 @@
+{
+    "nombre": "BotRepros",
+    "data_conection": {
+        "data_source": {
+            "driver": "{ODBC Driver 18 for SQL Server}",
+            "server": "localhost",
+            "database": "master",
+            "username": "lalala",
+            "password": "lalala1234",
+            "query": "SELECT [campo1] ,[campo2] FROM [sch].[tabla] AS tt (NOLOCK)"
+        },
+        "data_destiny": {
+            "driver": "{ODBC Driver 18 for SQL Server}",
+            "server": "localhost",
+            "database": "master",
+            "username": "lalala",
+            "password": "lalala1234",
+            "query": "SELECT [campo1] ,[campo2] FROM [sch].[tabla] AS tt (NOLOCK)"
+            "nonquery_i": "INSERT INTO [sch].[tabla] ([campo1], [campo2], [campo3], [campo4]) VALUES (?, 'valor1', 'valor2', ?)",
+            "nonquery_u": "UPDATE [sch].[tabla] SET [campo1] = ? ,[campo2] = getdate() WHERE [otrocampo] = ?"
+            }
+        },
+        "repros_prioridad" : {
+            "marca1": 1,
+            "marca2": 2,
+            "marca3": 3
+        },
+        "autor": {
+            "nombre": "Norman Ruiz",
+            "correo": "norman.ruiz@outlook.com.ar"
+        }
+
+}

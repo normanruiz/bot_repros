@@ -30,12 +30,12 @@
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 06/55/2022.
-# ULTIMA ACTUALIZACION: 11/05/2022.
+# FECHA DE CREACION   : 06/05/2022.
+# ULTIMA ACTUALIZACION: 03/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
-#                       #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
+#               #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
 # IDE                 : Atom 1.60.0.
 # COMPILADOR          : Python 3.9.2.
 # LICENCIA            : GPL (General Public License) - Version 3.
@@ -55,10 +55,10 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# Verificar_archivo() | bool | Verifica si el archivo de log del dia existe y  |
+# Verificar_archivo() | void | Verifica si el archivo de log del dia existe y  |
 #                             de no ser asi lo genera.                         |
 #----------------+--------+----------------------------------------------------|
-# Escribir_log   |  bool  | Escrive una linea con un mensaje en el rachivo     |
+# Escribir_log   |  void  | Escribe una linea con un mensaje en el rachivo     |
 #                           de logs.                                           |
 #================+========+====================================================|
 #
@@ -97,6 +97,47 @@ import time
 # Sin especificar
 
 #***************************************************************************
+#                        FUNCIONES PARA LINUX
+#===========================================================================
+# FUNCION   : bool verificar_archivo()
+# ACCION    : Verifica si el archivo de log del dia existe y
+#             de no ser asi lo genera.
+# PARAMETROS: void, no recibe nada.
+# DEVUELVE  : void, no devuelve nada.
+#---------------------------------------------------------------------------
+def Verificar_archivo():
+    file_log = None
+    try:
+        filename = "./files_log/log-" + str(date.today()) + ".txt"
+        file_log = open(filename, 'r')
+    except Exception as excepcion:
+        file_log = open(filename, 'w')
+    finally:
+        if file_log:
+            file_log.close()
+
+#---------------------------------------------------------------------------
+# FUNCION   : bool Escribir_log(str).
+# ACCION    : Escribe una linea con un mensaje en el archivo de logs.
+# PARAMETROS: str, la cadena a escribir en el log.
+# DEVUELVE  : void, no devuelve nada.
+#---------------------------------------------------------------------------
+def Escribir_log(texto):
+    file_log = None
+    excepcion = None
+    try:
+        Verificar_archivo()
+        filename = "./files_log/log-" + str(date.today()) + ".txt"
+        file_log = open(filename, 'a')
+        mensaje = time.strftime('%H:%M:%S', time.localtime()) + " " + texto + "\n"
+        file_log.write(mensaje)
+    except Exception as excepcion:
+            print("  ERROR - Escribiendo log:", str(excepcion))
+    finally:
+        if file_log:
+            file_log.close()
+
+#***************************************************************************
 #                        FUNCIONES PARA WINDOWS
 #===========================================================================
 # FUNCION   :
@@ -106,50 +147,6 @@ import time
 #---------------------------------------------------------------------------
 
 # Sin especificar
-
-#***************************************************************************
-#                        FUNCIONES PARA LINUX
-#===========================================================================
-# FUNCION   : bool verificar_archivo()
-# ACCION    : Verifica si el archivo de log del dia existe y
-#             de no ser asi lo genera.
-# PARAMETROS: void
-# DEVUELVE  : bool
-#---------------------------------------------------------------------------
-def Verificar_archivo():
-    try:
-        filename = "./files_log/log-" + str(date.today()) + ".txt"
-        file_log = open(filename, 'r')
-    except Exception as excepcion:
-        file_log = open(filename, 'w')
-        #print("  Error - Escribiendo log:", excepcion)
-    finally:
-        file_log.close()
-
-#---------------------------------------------------------------------------
-# FUNCION   : bool Escribir_log(string).
-# ACCION    : Escrive una linea con un mensaje en el rachivo de logs.
-# PARAMETROS: string.
-# DEVUELVE  : bool
-#---------------------------------------------------------------------------
-def Escribir_log(texto):
-    try:
-        Verificar_archivo()
-        filename = "./files_log/log-" + str(date.today()) + ".txt"
-        file_log = open(filename, 'a')
-        mensaje = time.strftime('%H:%M:%S', time.localtime()) + " " + texto + "\n"
-        file_log.write(mensaje)
-    except Exception as excepcion:
-        print("  Error - Escribiendo log:", excepcion)
-    finally:
-        file_log.close()
-
-#---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
 
 #=============================================================================
 #                            FIN DE ARCHIVO

@@ -30,12 +30,12 @@
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 12/05/2022.
+# FECHA DE CREACION   : 05/05/2022.
+# ULTIMA ACTUALIZACION: 03/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
-#                       #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
+#               #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
 # IDE                 : Atom 1.60.0.
 # COMPILADOR          : Python 3.9.2.
 # LICENCIA            : GPL (General Public License) - Version 3.
@@ -55,9 +55,7 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# Cargar()       | dictionary | Carga la configuracion desde un json.          |
-#----------------+--------+----------------------------------------------------|
-# ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
+# Cargar()       | dict | Carga la configuracion desde un archivo json.        |
 #================+========+====================================================|
 #
 #-------------------------------------------------------------------------------
@@ -94,23 +92,12 @@ import files_bot.logger as log
 # Sin especificar
 
 #***************************************************************************
-#                        FUNCIONES PARA WINDOWS
-#===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
-# Sin especificar
-
-#***************************************************************************
 #                        FUNCIONES PARA LINUX
 #===========================================================================
-# FUNCION   : dictionary Cargar().
-# ACCION    : Carga la configuracion desde un json.
-# PARAMETROS: void.
-# DEVUELVE  : dictionary
+# FUNCION   : dict Cargar().
+# ACCION    : Carga la configuracion desde un archivo json.
+# PARAMETROS: void, no recibe nada.
+# DEVUELVE  : dict, la configuracion del bot.
 #---------------------------------------------------------------------------
 def Cargar():
     mensaje = "Cargando configuracion..."
@@ -120,14 +107,23 @@ def Cargar():
         print(" ", mensaje)
         with open("./config.json") as configfile:
             config = json.load(configfile)
-        print("  Subproceso finalizado...")
         mensaje = "Configuracion cargada exitosamente..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Subproceso finalizado..."
+        print(" ", mensaje)
+        print()
         log.Escribir_log(mensaje)
     except Exception as excepcion:
-        mensaje = "Error - Carga de configuracion: " + excepcion
+        mensaje = "ERROR - Cargando configuracion: " + str(excepcion)
         log.Escribir_log(mensaje)
         print(" ", mensaje)
+        mensaje = "WARNING!!! - Subproceso interrumpido..."
+        print(" ", mensaje)
+        print()
+        log.Escribir_log(mensaje)
     finally:
+        log.Escribir_log("--------------------------------------------------------------------------------")
         return config
 
 #---------------------------------------------------------------------------
@@ -137,6 +133,16 @@ def Cargar():
 # DEVUELVE  :
 #---------------------------------------------------------------------------
 
+#***************************************************************************
+#                        FUNCIONES PARA WINDOWS
+#===========================================================================
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+
+# Sin especificar
 
 #=============================================================================
 #                            FIN DE ARCHIVO

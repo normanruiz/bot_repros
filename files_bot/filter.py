@@ -30,8 +30,8 @@
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 06/05/2022.
+# FECHA DE CREACION   : 05/05/2022.
+# ULTIMA ACTUALIZACION: 03/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -56,9 +56,17 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# ejemplo()      |  void  | Hace algo para el ejemplo.                         |
+# Priorizar()    |  int   | se encarga de establecer la prioridad sobre una    |
+#                           coleccion de repros, basada en los parametros de   |
+#                           priorizacion previamente establecidos en el        |
+#                           archivo de configuracion.                          |
 #----------------+--------+----------------------------------------------------|
-# ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
+# Resolicitar()  |  int   | Incrementa el contador de solicitures de una       |
+#                           terminal.                                          |
+#----------------+--------+----------------------------------------------------|
+# Generar_nuevo_lote()  |  dict  | Genera un lote con las nuevas terminales a  |
+#                                  ser insertadas y las terminales existentyes |
+#                                  a actulizar.                                |
 #================+========+====================================================|
 #
 #-------------------------------------------------------------------------------
@@ -73,8 +81,7 @@
 #*****************************************************************************
 #                             INCLUSIONES ESTANDAR
 #=============================================================================
-
-# Sin especificar
+import files_bot.logger as log
 
 #*****************************************************************************
 #                             INCLUSIONES PARA WINDOWS
@@ -95,7 +102,7 @@
 # Sin especificar
 
 #***************************************************************************
-#                        FUNCIONES PARA WINDOWS
+#                        FUNCIONES PARA LINUX
 #===========================================================================
 # FUNCION   : int Priorizar(dic, list)
 # ACCION    : se encarga de establecer la prioridad sobre una coleccion de
@@ -114,48 +121,105 @@ def Priorizar(parametros, repros):
                 if prioridades[repro] < prioridad:
                     prioridad = prioridades[repro]
     except Exception as excepcion:
-        print("  Error - Generando lote:", excepcion)
+        mensaje = "ERROR - priorizando reprogramaciones: " + str(excepcion)
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
     finally:
         return prioridad
 
 #---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : int Resolicitar(dict, dict)
+# ACCION    : Incrementa el contador de solicitures de una terminal.
+# PARAMETROS: dict, la coleccion de terminales con repros pendientes detectadas.
+#             dict, la coleccion de terminales ya en circuito de automatizacion.
+# DEVUELVE  : int, el numero de solicitures.
 #---------------------------------------------------------------------------
 def Resolicitar(terminal_candidata, terminales_miembro):
     solicitudes = None
     try:
         solicitudes = terminales_miembro[terminal_candidata] + 1
     except Exception as excepcion:
-        print("  Error - Generando lote:", excepcion)
+        mensaje = "ERROR - Calculando solicitudes: " + str(excepcion)
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
     finally:
         return solicitudes
+
+#---------------------------------------------------------------------------
+# FUNCION   : dict Generar_nuevo_lote(dict, dict, dict)
+# ACCION    : Genera un lote con las nuevas terminales a ser insertadas y
+#             las terminales existentyes a actulizar.
+# PARAMETROS: dict, parametros de configuracion del bot.
+#             dict, la coleccion de terminales con repros pendientes detectadas.
+#             dict, la coleccion de terminales ya en circuito de automatizacion.
+# DEVUELVE  : dict, el lote de terminales a procesar.
+#---------------------------------------------------------------------------
+def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro):
+    nuevo_lote = {}
+    status = True
+    count_u = 0
+    count_i1 = 0
+    count_i2 = 0
+    count_i3 = 0
+    try:
+        mensaje = "Generando nuevo lote de terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        for terminal_candidata, repros in terminales_candidatas.items():
+            if terminal_candidata in terminales_miembro:
+                nuevo_lote[terminal_candidata] = ["u", Resolicitar(terminal_candidata, terminales_miembro)]
+                count_u += 1
+            else:
+                prioridad = Priorizar(parametros, repros)
+                nuevo_lote[terminal_candidata] = ["i", prioridad]
+                if prioridad == 1:
+                    count_i1 += 1
+                elif prioridad == 2:
+                    count_i2 += 1
+                else:
+                    count_i3 += 1
+        mensaje = "Se genero un lote con: " + str(len(nuevo_lote)) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Resolicitudes: " + str(count_u) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Prioridad 1: " + str(count_i1) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Prioridad 2: " + str(count_i2) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Prioridad 3: " + str(count_i3) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Subproceso finalizado..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+    except Exception as excepcion:
+        status = False
+        nuevo_lote = "fallido"
+        mensaje = "ERROR - Generando lote: " + str(excepcion)
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+    finally:
+        if not(status):
+            mensaje = "WARNING!!! - Subproceso interrumpido..."
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+        print()
+        log.Escribir_log("--------------------------------------------------------------------------------")
+        return nuevo_lote
+
 #---------------------------------------------------------------------------
 # FUNCION   :
 # ACCION    :
 # PARAMETROS:
 # DEVUELVE  :
 #---------------------------------------------------------------------------
-def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro):
-    nuevo_lote = {}
-    try:
-        print("  Generando nuevo lote de terminales...")
-        for terminal_candidata, repros in terminales_candidatas.items():
-            if terminal_candidata in terminales_miembro:
-                nuevo_lote[terminal_candidata] = ["u", Resolicitar(terminal_candidata, terminales_miembro)]
-            else:
-                nuevo_lote[terminal_candidata] = ["i", Priorizar(parametros, repros)]
-        print("  Se genero un lote con:", len(nuevo_lote), " terminales...")
-        print("  Subproceso finalizado...")
-    except Exception as excepcion:
-        print("  Error - Generando lote:", excepcion)
-    finally:
-        return nuevo_lote
 
 #***************************************************************************
-#                        FUNCIONES PARA LINUX
+#                        FUNCIONES PARA WINDOWS
 #===========================================================================
 # FUNCION   : <valor de retorno> Generar_nuevo_lote().
 # ACCION    : Cre< un nuevo lote de terminal es candidatas excluyendo las
@@ -164,14 +228,7 @@ def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro):
 # DEVUELVE  : Un array Terminales
 #---------------------------------------------------------------------------
 
-
-#---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
+# Sin especificar
 
 #=============================================================================
 #                            FIN DE ARCHIVO

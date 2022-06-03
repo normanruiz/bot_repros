@@ -30,12 +30,12 @@
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 11/55/2022.
-# ULTIMA ACTUALIZACION: 11/05/2022.
+# FECHA DE CREACION   : 11/05/2022.
+# ULTIMA ACTUALIZACION: 03/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
-#                       #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
+#               #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
 # IDE                 : Atom 1.60.0.
 # COMPILADOR          : Python 3.9.2.
 # LICENCIA            : GPL (General Public License) - Version 3.
@@ -55,10 +55,27 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# Buscar_candidatas() | dictionary | Busca terminales con repros pendientes y  |
-#                    las retorna junto al codigo de repro en un diccionario.   |
+# Conectar() |  Objeto  | Abre una conexion con la base de datos y retorna     |
+#              conexion    el objeto de dicha conexion.                        |
 #----------------+--------+----------------------------------------------------|
-# ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
+# Desconectar() | bool | Cierra la conexion contra la base de datos.           |
+#----------------+--------+----------------------------------------------------|
+# Ejecutar_consulta_origen() | dict | Ejecutra la query contra la base de      |
+#                              datos que genera el listado de terminales con   |
+#                              sus respectivas rerogramaciones pendientes.     |
+#----------------+--------+----------------------------------------------------|
+# Ejecutar_consulta_destino() | dict | Ejecutra la query contra la base de     |
+#                              datos que genera el listado de terminales ya    |
+#                              presentes en el circuito de la automatizacion.  |
+#----------------+--------+----------------------------------------------------|
+# Insertar_nuevos() | int | Ejecutra la nonquery contra la base de             |
+#                              datos que inserta las nuevas terminales al      |
+#                              circuito de la automatizacion.                  |
+#----------------+--------+----------------------------------------------------|
+# Actualizar_existentes() | int | Ejecutra la nonquery contra la base de       |
+#                              datos que actualioza el contador de solicitudes |
+#                              de las terminales ya presentes en el circuito   |
+#                              de la automatizacion.                           |
 #================+========+====================================================|
 #
 #-------------------------------------------------------------------------------
@@ -74,6 +91,7 @@
 #                             INCLUSIONES ESTANDAR
 #=============================================================================
 import pyodbc
+import files_bot.logger as log
 
 #*****************************************************************************
 #                             INCLUSIONES PARA WINDOWS
@@ -94,75 +112,79 @@ import pyodbc
 # Sin especificar
 
 #***************************************************************************
-#                        FUNCIONES PARA WINDOWS
-#===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
-# Sin especificar
-
-#***************************************************************************
 #                        FUNCIONES PARA LINUX
 #===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
-
-
-#---------------------------------------------------------------------------
-# FUNCION   : objeto Conectar(dictionary).
+# FUNCION   : objeto_conexion Conectar(dict, str).
 # ACCION    : Abre la coneccion contra la base de datos.
-# PARAMETROS: dictionary.
-# DEVUELVE  : objeto.
+# PARAMETROS:  dict, parametros de configuracion del bot.
+#      str, una cadena/bandera indicando a que base de datos debe conectarse.
+# DEVUELVE  : objeto conexion.
 #---------------------------------------------------------------------------
 def Conectar(parametros, ubicacion):
     conexion = False
     try:
+        mensaje = "Conectando a base de datos " + ubicacion + "..."
+        log.Escribir_log(mensaje)
         cadena_de_conexion = 'DRIVER=' + parametros["data_conection"][ubicacion]["driver"] + ';SERVER=' + parametros["data_conection"][ubicacion]["server"] + ';DATABASE=' + parametros["data_conection"][ubicacion]["database"] + ';UID=' + parametros["data_conection"][ubicacion]["username"] + ';PWD=' + parametros["data_conection"][ubicacion]["password"] + ';TrustServerCertificate=yes'
         conexion = pyodbc.connect(cadena_de_conexion)
+        mensaje = "Conexion establecida con base de datos " + ubicacion + "..."
+        log.Escribir_log(mensaje)
     except Exception as excepcion:
-        print("  Error - Conectando a base de datos:", excepcion)
+        mensaje = "ERROR - Conectando a base de datos " + ubicacion + ": " + str(excepcion)
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
     finally:
         return conexion
 
 #---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : bool Desconectar(objeto_conexion)
+# ACCION    : Cierra la conexion contra la base de datos
+# PARAMETROS: objeto_conexion, la conexion que debe cerrarse
+# DEVUELVE  : bool, el estado en True si termino sin errores
+#                    y False caso contrario
 #---------------------------------------------------------------------------
-def Desconectar(conexion):
+def Desconectar(conexion, ubicacion):
     status = False
     try:
+        mensaje = "Cerrando conexion con base de datos: " + ubicacion + "..."
+        log.Escribir_log(mensaje)
         conexion.close()
         status = True
+        mensaje = "Conexion a base de datos: " + ubicacion + " cerrada..."
+        log.Escribir_log(mensaje)
     except Exception as excepcion:
-        print("  Error - Cerrando conexion a base de datos:", excepcion)
+        mensaje = "ERROR - Cerrando conexion a base de datos:" + ubicacion + ": " + str(excepcion)
+        log.Escribir_log(mensaje)
     finally:
         return status
 
 #---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : dict Ejecutar_consulta_origen(objeto_conexion, str, str)
+# ACCION    : Consulta la base de datos para recuperar las terminales con
+#             repros pendientes.
+# PARAMETROS: objeto_conexion, la conexion a utilizar
+#             str, la base de datos a donde apuntar
+#             str, la query que se ejecutara
+# DEVUELVE  : dict, coleccion de terminales y sus respectivas repros
 #---------------------------------------------------------------------------
-def Ejecutar_consulta_origen(conexion, consulta):
+def Ejecutar_consulta_origen(conexion, ubicacion, consulta):
     data = {}
     aux_terminal = None
     aux_repro = []
+    cursor = None
     try:
+        mensaje = "Ejecutando query contra " + ubicacion + "..."
+        log.Escribir_log(mensaje)
+        mensaje = "Query: " + consulta
+        log.Escribir_log(mensaje)
+        mensaje = "Generando cursor..."
+        log.Escribir_log(mensaje)
         cursor = conexion.cursor()
+        mensaje = "Comenzando lectura de datos..."
+        log.Escribir_log(mensaje)
         cursor.execute(consulta)
         registro = cursor.fetchone()
-        if registro:
-            aux_terminal = str(int(registro[0]))
+        aux_terminal = str(int(registro[0]))
         while registro:
             if aux_terminal == str(int(registro[0])):
                 aux_repro.append(str(registro[1]).replace(' ', ''))
@@ -173,88 +195,126 @@ def Ejecutar_consulta_origen(conexion, consulta):
                 aux_repro.append(str(registro[1]).replace(' ', ''))
             registro = cursor.fetchone()
         data[aux_terminal] = list(aux_repro)
+        mensaje = "Lectura de datos finalizada..."
+        log.Escribir_log(mensaje)
     except Exception as excepcion:
-        print("  Error - Ejecutando consulta:", excepcion)
+        print("  ERROR - Ejecutando consulta a origen:", excepcion)
+        mensaje = "ERROR - Ejecutando query :" + str(excepcion)
+        log.Escribir_log(mensaje)
     finally:
+        if cursor:
+            cursor.close()
+            mensaje = "Destruyendo cursor..."
+            log.Escribir_log(mensaje)
         return data
 
 #---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : dict Ejecutar_consulta_destino(objeto_conexion, str, str)
+# ACCION    : Consulta la base de datos para recuperar las terminales ya
+#             dentro del circuitod e automatizacion.
+# PARAMETROS: objeto_conexion, la conexion a utilizar
+#             str, la base de datos a donde apuntar
+#             str, la query que se ejecutara
+# DEVUELVE  : dict, coleccion de terminales y su cantidad de solicitudes
 #---------------------------------------------------------------------------
-def Ejecutar_consulta_destino(conexion, consulta):
+def Ejecutar_consulta_destino(conexion, ubicacion, consulta):
     data = {}
-
+    cursor = None
     try:
+        mensaje = "Ejecutando query contra " + ubicacion + "..."
+        log.Escribir_log(mensaje)
+        mensaje = "Query: " + consulta
+        log.Escribir_log(mensaje)
+        mensaje = "Generando cursor..."
+        log.Escribir_log(mensaje)
+        cursor = conexion.cursor()
+        mensaje = "Comenzando lectura de datos..."
+        log.Escribir_log(mensaje)
         cursor = conexion.cursor()
         cursor.execute(consulta)
         registro = cursor.fetchone()
         while registro:
             data[registro.terminal] = registro.cant_solicitudes
             registro = cursor.fetchone()
+        mensaje = "Lectura de datos finalizada..."
+        log.Escribir_log(mensaje)
     except Exception as excepcion:
-        print("  Error - Ejecutando consulta:", excepcion)
+        print("  ERROR - Ejecutando consulta a destino:", excepcion)
+        mensaje = "ERROR - Ejecutando query :" + str(excepcion)
+        log.Escribir_log(mensaje)
     finally:
+        if cursor:
+            cursor.close()
+            mensaje = "Destruyendo cursor..."
+            log.Escribir_log(mensaje)
         return data
 
-
 #---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : int Insertar_nuevos(objeto_conexion, objeto_cursor, str, str, int)
+# ACCION    : Ejecutra la nonquery contra la base de datos que inserta las
+#             nuevas terminales al circuito de la automatizacion.
+# PARAMETROS: objeto_conexion, la conexion a utilizar
+#             objeto_cursor, el cursor para la ejecucion del nonquery
+#             str, la cadena con el insert a realizar
+#             str, la terminla a insertar
+#             int, la prioridad a setear
+# DEVUELVE  : int, 1 si se inserto el campo, 0 si fallo
 #---------------------------------------------------------------------------
-def Insertar_nuevos(conexion, nonquery_i, terminal, prioridad):
+def Insertar_nuevos(conexion, cursor, nonquery_i, terminal, prioridad):
     status = 0
     try:
-        cursor = conexion.cursor()
         count = cursor.execute(nonquery_i, terminal, prioridad).rowcount
         conexion.commit()
         if count == 1:
             status = 1
     except Exception as excepcion:
-        mensaje = "Error - Carga de configuracion: " + excepcion
+        mensaje = "ERROR - Insertando nuevo registro: Terminal " + Terminal + "..."
+        log.Escribir_log(mensaje)
+        mensaje = "ERROR - Insertando nuevo registro: " + excepcion
         log.Escribir_log(mensaje)
         print(" ", mensaje)
     finally:
         return status
 
 #---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : int Actualizar_existentes(conexion, cursor, nonquery_u, terminal, solicitudes)
+# ACCION    : Ejecutra la nonquery contra la base de datos que actualioza el
+#             contador de solicitudes de las terminales ya presentes en el
+#             circuito de la automatizacion.
+# PARAMETROS: objeto_conexion, la conexion a utilizar
+#             objeto_cursor, el cursor para la ejecucion del nonquery
+#             str, la cadena con el update a realizar
+#             str, la terminla a actualizar
+#             int, el numero de solicitures a setear
+# DEVUELVE  : int, 1 si se actualizo el campo, 0 si fallo
 #---------------------------------------------------------------------------
-def Actualizar_existentes(conexion, nonquery_u, terminal, solicitudes):
+def Actualizar_existentes(conexion, cursor, nonquery_u, terminal, solicitudes):
     status = 0
     try:
-        cursor = conexion.cursor()
         count = cursor.execute(nonquery_u, solicitudes, terminal).rowcount
         conexion.commit()
         if count == 1:
             status = 1
     except Exception as excepcion:
-        mensaje = "Error - Carga de configuracion: " + excepcion
+        mensaje = "ERROR - Actualizando registro existente: Terminal " + Terminal + "..."
+        log.Escribir_log(mensaje)
+        mensaje = "ERROR - Actualizando registro existente: " + excepcion
         log.Escribir_log(mensaje)
         print(" ", mensaje)
     finally:
         return status
 
+#***************************************************************************
+#                        FUNCIONES PARA WINDOWS
+#===========================================================================
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+
+# Sin especificar
+
 #=============================================================================
 #                            FIN DE ARCHIVO
 ##############################################################################
-
-
-
-# Some other example server values are
-# server = 'localhost\sqlexpress' # for a named instance
-# server = 'myserver,port' # to specify an alternate port
-
-
-#cursor.execute("SELECT @@version;")
-#row = cursor.fetchone()
-#while row:
-#    print(row[0])
-#    row = cursor.fetchone()

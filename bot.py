@@ -3,7 +3,7 @@
 # AUTOR/ES            : Ruiz Norman
 # VERSION             : 0.01 beta.
 # FECHA DE CREACION   : 03/05/2022.
-# ULTIMA ACTUALIZACION: 09/05/2022.
+# ULTIMA ACTUALIZACION: 02/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #  **************************************************************************
 #  * El software libre no es una cuestion economica sino una cuestion etica *
@@ -26,7 +26,7 @@
 
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
-#                       #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
+#               #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
 # IDE                 : Atom 1.60.0.
 # COMPILADOR          : Python 3.9.2.
 # LICENCIA            : GPL (General Public License) - Version 3.
@@ -86,43 +86,79 @@ import files_bot.action as accion
 #==============================================================================
 # FUNCION PRINCIPAL - PUNTO DE INICIO DEL PROYECTO
 #------------------------------------------------------------------------------
-status_code = 0
-try:
-    os.system('clear')
-    print()
-    print(" ================================================================================")
-    print("  Iniciando Repro's Bot...")
-    print(" ================================================================================")
-    print()
-    log.Escribir_log("================================================================================")
-    log.Escribir_log("Iniciando Repro's Bot...")
-    # Cargo la configuracion desde un archivo
-    parametros = configuracion.Cargar()
-    print()
-    # Defino un diccionario terminal/repro con el valor devuelto por la funcion Buscar_candidatas
-    terminales_candidatas = origen.Buscar_candidatas(parametros)
-    print()
-    # Defino una list de terminales con el valor devuelto por la funcion Buscar_terminales_miembro
-    terminales_miembro = destino.Buscar_terminales_miembro(parametros)
-    print()
-    # Defino un diccionario terminal/prioridad con el valor devuelto por la funcion Generar_nuevo_lote
-    nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro)
-    print()
-    # Llamo la funcion Anexar_lote para incorporar las nuevas terminales al proceso de migracion
-    accion.Anexar_lote(parametros, nuevo_lote)
-except Exception as excepcion:
-    status_code = 1
-    mensaje = "Error - Ejecucion principal: " + excepcion
-    log.Escribir_log(mensaje)
-    print("  ", mensaje)
-finally:
-    log.Escribir_log("Finalizando acciones...")
-    log.Escribir_log("================================================================================")
-    print()
-    print(" ================================================================================")
-    print("  Finalizando acciones...")
-    print(" ================================================================================")
-    print()
+def main():
+    status_code = 0
+    try:
+        os.system('clear')
+        parametros = None
+        terminales_candidatas = None
+        terminales_miembro = None
+        nuevo_lote = None
+        status = True
+        print()
+        print(" ================================================================================")
+        print("  Iniciando Repro's Bot...")
+        print(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print()
+        log.Escribir_log("================================================================================")
+        log.Escribir_log(" Iniciando Repro's Bot...")
+        log.Escribir_log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+        # Cargo la configuracion desde un archivo
+        if status:
+            parametros = configuracion.Cargar()
+            if not(parametros):
+                status = False
+
+        # Cargo el diccionario terminal/repros con el valor devuelto por la funcion Buscar_candidatas
+        if status:
+            terminales_candidatas = origen.Buscar_candidatas(parametros)
+            if terminales_candidatas == "fallido":
+                status = False
+
+        # Cargo un diccionario de terminales con el valor devuelto por la funcion Buscar_terminales_miembro
+        if status:
+            terminales_miembro = destino.Buscar_terminales_miembro(parametros)
+            if terminales_miembro == "fallido":
+                status = False
+
+        # cargo un diccionario terminal/prioridad/solicitures con el valor devuelto por la funcion Generar_nuevo_lote
+        if status:
+            nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro)
+            if terminales_miembro == "fallido":
+                status = False
+
+        # Llamo la funcion Anexar_lote para incorporar las nuevas terminales al proceso de migracion
+        if status:
+            accion.Anexar_lote(parametros, nuevo_lote)
+
+        if not(status):
+
+            mensaje = "WARNING!!! - Proceso principal interrumpido, no se realizaran mas acciones..."
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+
+    except Exception as excepcion:
+        status_code = 1
+        mensaje = "ERROR - Ejecucion principal: " + str(excepcion)
+        log.Escribir_log(mensaje)
+        print(" ", mensaje)
+    finally:
+        log.Escribir_log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        log.Escribir_log(" Finalizando acciones...")
+        log.Escribir_log("================================================================================")
+        print()
+        print(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("  Finalizando acciones...")
+        print(" ================================================================================")
+        print()
+        return status_code
+
+#==============================================================================
+# LLAMADA DE INICIO
+#------------------------------------------------------------------------------
+main()
+
 #=============================================================================
 #                            FIN DE ARCHIVO
 ##############################################################################

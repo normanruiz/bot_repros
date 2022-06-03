@@ -30,12 +30,12 @@
 # AUTOR               : Norman Ruiz.
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
-# FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 05/05/2022.
+# FECHA DE CREACION   : 05/05/2022.
+# ULTIMA ACTUALIZACION: 03/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
-#                       #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
+#               #488-Microsoft Mon Sep 01 13:43:00 PST 2020 x86_64 GNU/Linux.
 # IDE                 : Atom 1.60.0.
 # COMPILADOR          : Python 3.9.2.
 # LICENCIA            : GPL (General Public License) - Version 3.
@@ -56,10 +56,11 @@
 #==============================================================================|
 #     NOMBRE     |  TIPO  |                    ACCION                          |
 #================+========+====================================================|
-# Buscar_candidatas() | dictionary | Busca terminales con repros pendientes y  |
+#  Buscar_candidatas() |  dict  | Busca terminales con repros pendientes y     |
 #                    las retorna junto al codigo de repro en un diccionario.   |
 #----------------+--------+----------------------------------------------------|
-# ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
+#  Contar_repros()  |  int  | Cuenta la cantidad de reprogamaciones dentro del |
+#        arreglo independientemente de la termianl a la que pertenesca.        |
 #================+========+====================================================|
 #
 #-------------------------------------------------------------------------------
@@ -97,30 +98,15 @@ import files_bot.conection as data_conection
 # Sin especificar
 
 #***************************************************************************
-#                        FUNCIONES PARA WINDOWS
-#===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
-# Sin especificar
-
-#***************************************************************************
 #                        FUNCIONES PARA LINUX
 #===========================================================================
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
-#---------------------------------------------------------------------------
-
-#---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : int Contar_repros(dict)
+# ACCION    : Cuenta la cantidad de reprogamaciones dentro del arreglo
+#             independientemente de la termianl a la que pertenesca.
+# PARAMETROS: dict, diccionario con las terminales y sus respectivas
+#             reprogramaciones pendientes.
+# DEVUELVE  : int, un entero con el recuento de reprogramaciones del
+#             diccionario.
 #---------------------------------------------------------------------------
 def Contar_repros(terminales_candidatas):
     count = 0
@@ -128,33 +114,58 @@ def Contar_repros(terminales_candidatas):
         for terminal, repros in terminales_candidatas.items():
             count += len(repros)
     except Exception as excepcion:
-        print("  Error - :", excepcion)
+        mensaje = "ERROR - Contabilizando reprogramaciones: " + str(excepcion)
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
     finally:
         return count
 
 #---------------------------------------------------------------------------
-# FUNCION   : dictionary Buscar_candidatas(dictionary).
-# ACCION    : Busca terminales con repros pendientesy las retorna junto
+# FUNCION   : dict Buscar_candidatas(dict).
+# ACCION    : Busca terminales con repros pendientes y las retorna junto
 #             al codigo de repro en un diccionario.
-# PARAMETROS: dictionary.
-# DEVUELVE  : dictionary.
+# PARAMETROS: dict, parametros de configuracion del bot.
+# DEVUELVE  : dict, coleccion con las terminales y sus repros.
 #---------------------------------------------------------------------------
 def Buscar_candidatas(parametros):
+    ubicacion ="data_source"
     terminales_candidatas = {}
-    consulta = parametros["data_conection"]["data_source"]["query"]
+    consulta = parametros["data_conection"][ubicacion]["query"]
+    conexion = None
+    status = True
     try:
-        print("  Buscando terminales candidatas...")
-        conexion = data_conection.Conectar(parametros, "data_source")
-        terminales_candidatas = data_conection.Ejecutar_consulta_origen(conexion, consulta)
-
-        print("  Terminales detectadas:", len(terminales_candidatas.keys()))
-        print("  Repros pendientes detectadas:", Contar_repros(terminales_candidatas))
-        print("  Subproceso finalizado...")
-
+        mensaje = "Buscando terminales candidatas..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        conexion = data_conection.Conectar(parametros, ubicacion)
+        if conexion:
+            terminales_candidatas = data_conection.Ejecutar_consulta_origen(conexion, ubicacion, consulta)
+            mensaje = "Terminales detectadas: " + str(len(terminales_candidatas.keys()))
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+            mensaje = "Repros pendientes detectadas: " + str(Contar_repros(terminales_candidatas))
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+            mensaje = "Subproceso finalizado..."
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+        else:
+            status = False
     except Exception as excepcion:
-        print("  Error - Carga de terminales candidatas:", excepcion)
+        terminales_candidatas = "fallido"
+        status = False
+        mensaje = "ERROR - Carga de terminales candidatas: " + str(excepcion)
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
     finally:
-        conexion.close()
+        if not(status):
+            mensaje = "WARNING!!! - Subproceso interrumpido..."
+            print(" ", mensaje)
+            log.Escribir_log(mensaje)
+        if conexion:
+            data_conection.Desconectar(conexion, ubicacion)
+        print()
+        log.Escribir_log("--------------------------------------------------------------------------------")
         return terminales_candidatas
 
 #---------------------------------------------------------------------------
@@ -164,6 +175,16 @@ def Buscar_candidatas(parametros):
 # DEVUELVE  :
 #---------------------------------------------------------------------------
 
+#***************************************************************************
+#                        FUNCIONES PARA WINDOWS
+#===========================================================================
+# FUNCION   :
+# ACCION    :
+# PARAMETROS:
+# DEVUELVE  :
+#---------------------------------------------------------------------------
+
+# Sin especificar
 
 #=============================================================================
 #                            FIN DE ARCHIVO
