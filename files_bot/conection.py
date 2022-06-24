@@ -31,7 +31,7 @@
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 11/05/2022.
-# ULTIMA ACTUALIZACION: 03/06/2022.
+# ULTIMA ACTUALIZACION: 24/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -67,6 +67,9 @@
 # Ejecutar_consulta_destino() | dict | Ejecutra la query contra la base de     |
 #                              datos que genera el listado de terminales ya    |
 #                              presentes en el circuito de la automatizacion.  |
+#----------------+--------+----------------------------------------------------|
+# Ejecutar_consulta() | list | Consulta la base de datos para recuperar las    |
+#                               terminales activas.                            |
 #----------------+--------+----------------------------------------------------|
 # Insertar_nuevos() | int | Ejecutra la nonquery contra la base de             |
 #                              datos que inserta las nuevas terminales al      |
@@ -137,9 +140,10 @@ def Conectar(parametros, ubicacion):
         return conexion
 
 #---------------------------------------------------------------------------
-# FUNCION   : bool Desconectar(objeto_conexion)
+# FUNCION   : bool Desconectar(objeto_conexion, str)
 # ACCION    : Cierra la conexion contra la base de datos
 # PARAMETROS: objeto_conexion, la conexion que debe cerrarse
+#      str, una cadena/bandera indicando a que base de datos debe conectarse.
 # DEVUELVE  : bool, el estado en True si termino sin errores
 #                    y False caso contrario
 #---------------------------------------------------------------------------
@@ -182,19 +186,26 @@ def Ejecutar_consulta_origen(conexion, ubicacion, consulta):
         cursor = conexion.cursor()
         mensaje = "Comenzando lectura de datos..."
         log.Escribir_log(mensaje)
+
+
+
         cursor.execute(consulta)
         registro = cursor.fetchone()
-        aux_terminal = str(int(registro[0]))
-        while registro:
-            if aux_terminal == str(int(registro[0])):
-                aux_repro.append(str(registro[1]).replace(' ', ''))
-            else:
-                data[aux_terminal] = list(aux_repro)
-                aux_terminal = str(int(registro[0]))
-                aux_repro.clear()
-                aux_repro.append(str(registro[1]).replace(' ', ''))
-            registro = cursor.fetchone()
-        data[aux_terminal] = list(aux_repro)
+        if registro:
+            aux_terminal = str(registro[0])
+            while registro:
+                if aux_terminal == str(registro[0]):
+                    aux_repro.append(str(registro[1]).replace(' ', ''))
+                else:
+                    data[aux_terminal] = list(aux_repro)
+                    aux_terminal = str(int(registro[0]))
+                    aux_repro.clear()
+                    aux_repro.append(str(registro[1]).replace(' ', ''))
+                registro = cursor.fetchone()
+            data[aux_terminal] = list(aux_repro)
+
+
+
         mensaje = "Lectura de datos finalizada..."
         log.Escribir_log(mensaje)
     except Exception as excepcion:
@@ -219,6 +230,65 @@ def Ejecutar_consulta_origen(conexion, ubicacion, consulta):
 #---------------------------------------------------------------------------
 def Ejecutar_consulta_destino(conexion, ubicacion, consulta):
     data = {}
+    aux_terminal = None
+    aux_repro = []
+    estados = ['Solicitado', 'Fallido']
+    cursor = None
+    try:
+        mensaje = "Ejecutando query contra " + ubicacion + "..."
+        log.Escribir_log(mensaje)
+        mensaje = "Query: " + consulta
+        log.Escribir_log(mensaje)
+        mensaje = "Generando cursor..."
+        log.Escribir_log(mensaje)
+        cursor = conexion.cursor()
+        mensaje = "Comenzando lectura de datos..."
+        log.Escribir_log(mensaje)
+        cursor.execute(consulta)
+        registro = cursor.fetchone()
+        if registro:
+            aux_terminal = str(registro[0])
+            if str(registro[2]) in estados:
+                aux_repro.append('U')
+            else:
+                aux_repro.append('I')
+            while registro:
+                if aux_terminal == str(registro[0]):
+                    aux_repro.append(int(registro[1]))
+                else:
+                    data[aux_terminal] = list(aux_repro)
+                    aux_terminal = str(registro[0])
+                    aux_repro.clear()
+                    if str(registro[2]) in estados:
+                        aux_repro.append('U')
+                    else:
+                        aux_repro.append('I')
+                    aux_repro.append(registro[1])
+                registro = cursor.fetchone()
+            data[aux_terminal] = list(aux_repro)
+        mensaje = "Lectura de datos finalizada..."
+        log.Escribir_log(mensaje)
+    except Exception as excepcion:
+        print("  ERROR - Ejecutando consulta a destino:", excepcion)
+        mensaje = "ERROR - Ejecutando query :" + str(excepcion)
+        log.Escribir_log(mensaje)
+    finally:
+        if cursor:
+            cursor.close()
+            mensaje = "Destruyendo cursor..."
+            log.Escribir_log(mensaje)
+        return data
+
+#---------------------------------------------------------------------------
+# FUNCION   : list Ejecutar_consulta(objeto_conexion, str, str)
+# ACCION    : Consulta la base de datos para recuperar las terminales activas
+# PARAMETROS: objeto_conexion, la conexion a utilizar
+#             str, la base de datos a donde apuntar
+#             str, la query que se ejecutara
+# DEVUELVE  : list, coleccion de terminales activas
+#---------------------------------------------------------------------------
+def Ejecutar_consulta(conexion, ubicacion, consulta):
+    data = []
     cursor = None
     try:
         mensaje = "Ejecutando query contra " + ubicacion + "..."
@@ -233,13 +303,14 @@ def Ejecutar_consulta_destino(conexion, ubicacion, consulta):
         cursor = conexion.cursor()
         cursor.execute(consulta)
         registro = cursor.fetchone()
-        while registro:
-            data[registro.terminal] = registro.cant_solicitudes
-            registro = cursor.fetchone()
+        if registro:
+            while registro:
+                data.append(registro.terminal)
+                registro = cursor.fetchone()
         mensaje = "Lectura de datos finalizada..."
         log.Escribir_log(mensaje)
     except Exception as excepcion:
-        print("  ERROR - Ejecutando consulta a destino:", excepcion)
+        print("  ERROR - Ejecutando consulta:", excepcion)
         mensaje = "ERROR - Ejecutando query :" + str(excepcion)
         log.Escribir_log(mensaje)
     finally:

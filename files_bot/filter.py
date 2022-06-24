@@ -31,7 +31,7 @@
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 05/05/2022.
-# ULTIMA ACTUALIZACION: 03/06/2022.
+# ULTIMA ACTUALIZACION: 24/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -137,7 +137,7 @@ def Priorizar(parametros, repros):
 def Resolicitar(terminal_candidata, terminales_miembro):
     solicitudes = None
     try:
-        solicitudes = terminales_miembro[terminal_candidata] + 1
+        solicitudes = terminales_miembro[terminal_candidata][1] + 1
     except Exception as excepcion:
         mensaje = "ERROR - Calculando solicitudes: " + str(excepcion)
         print(" ", mensaje)
@@ -146,17 +146,19 @@ def Resolicitar(terminal_candidata, terminales_miembro):
         return solicitudes
 
 #---------------------------------------------------------------------------
-# FUNCION   : dict Generar_nuevo_lote(dict, dict, dict)
+# FUNCION   : dict Generar_nuevo_lote(dict, dict, dict, list)
 # ACCION    : Genera un lote con las nuevas terminales a ser insertadas y
 #             las terminales existentyes a actulizar.
 # PARAMETROS: dict, parametros de configuracion del bot.
 #             dict, la coleccion de terminales con repros pendientes detectadas.
 #             dict, la coleccion de terminales ya en circuito de automatizacion.
+#             list, listado de terminales activas
 # DEVUELVE  : dict, el lote de terminales a procesar.
 #---------------------------------------------------------------------------
-def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro):
+def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro, filtro_activas):
     nuevo_lote = {}
     status = True
+    count_i = 0
     count_u = 0
     count_i1 = 0
     count_i2 = 0
@@ -166,18 +168,22 @@ def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro):
         print(" ", mensaje)
         log.Escribir_log(mensaje)
         for terminal_candidata, repros in terminales_candidatas.items():
-            if terminal_candidata in terminales_miembro:
-                nuevo_lote[terminal_candidata] = ["u", Resolicitar(terminal_candidata, terminales_miembro)]
-                count_u += 1
-            else:
-                prioridad = Priorizar(parametros, repros)
-                nuevo_lote[terminal_candidata] = ["i", prioridad]
-                if prioridad == 1:
-                    count_i1 += 1
-                elif prioridad == 2:
-                    count_i2 += 1
+            if terminal_candidata in filtro_activas:
+                if terminal_candidata in terminales_miembro.keys():
+                    if terminales_miembro[terminal_candidata][0] == 'U':
+                        nuevo_lote[terminal_candidata] = ["u", Resolicitar(terminal_candidata, terminales_miembro)]
+                        count_u += 1
+                    else:
+                        count_i += 1
                 else:
-                    count_i3 += 1
+                    prioridad = Priorizar(parametros, repros)
+                    nuevo_lote[terminal_candidata] = ["i", prioridad]
+                    if prioridad == 1:
+                        count_i1 += 1
+                    elif prioridad == 2:
+                        count_i2 += 1
+                    else:
+                        count_i3 += 1
         mensaje = "Se genero un lote con: " + str(len(nuevo_lote)) + " terminales..."
         print(" ", mensaje)
         log.Escribir_log(mensaje)
@@ -191,6 +197,9 @@ def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro):
         print(" ", mensaje)
         log.Escribir_log(mensaje)
         mensaje = "Prioridad 3: " + str(count_i3) + " terminales..."
+        print(" ", mensaje)
+        log.Escribir_log(mensaje)
+        mensaje = "Ignoradas: " + str(count_i) + " terminales..."
         print(" ", mensaje)
         log.Escribir_log(mensaje)
         mensaje = "Subproceso finalizado..."

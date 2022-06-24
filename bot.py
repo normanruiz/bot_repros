@@ -1,9 +1,9 @@
 ##############################################################################
 # ARCHIVO             : bot.py
 # AUTOR/ES            : Ruiz Norman
-# VERSION             : 0.01 beta.
+# VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 03/05/2022.
-# ULTIMA ACTUALIZACION: 02/06/2022.
+# ULTIMA ACTUALIZACION: 24/06/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #  **************************************************************************
 #  * El software libre no es una cuestion economica sino una cuestion etica *
@@ -93,6 +93,7 @@ def main():
         parametros = None
         terminales_candidatas = None
         terminales_miembro = None
+        filtro_activas = None
         nuevo_lote = None
         status = True
         print()
@@ -109,6 +110,7 @@ def main():
             parametros = configuracion.Cargar()
             if not(parametros):
                 status = False
+            status = parametros["status"]
 
         # Cargo el diccionario terminal/repros con el valor devuelto por la funcion Buscar_candidatas
         if status:
@@ -122,9 +124,15 @@ def main():
             if terminales_miembro == "fallido":
                 status = False
 
+        # Cargo un list de terminales con el listado de terminales activas obtenido de la funcion Filtrar_activas
+        if status:
+            filtro_activas = destino.Filtrar_activas(parametros)
+            if filtro_activas == "fallido":
+                status = False
+
         # cargo un diccionario terminal/prioridad/solicitures con el valor devuelto por la funcion Generar_nuevo_lote
         if status:
-            nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro)
+            nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro, filtro_activas)
             if terminales_miembro == "fallido":
                 status = False
 
