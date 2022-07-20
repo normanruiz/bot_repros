@@ -3,7 +3,7 @@
 # AUTOR/ES            : Ruiz Norman
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 03/05/2022.
-# ULTIMA ACTUALIZACION: 24/06/2022.
+# ULTIMA ACTUALIZACION: 20/07/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #  **************************************************************************
 #  * El software libre no es una cuestion economica sino una cuestion etica *
@@ -124,21 +124,15 @@ def main():
             if terminales_miembro == "fallido":
                 status = False
 
-        # Cargo un list de terminales con el listado de terminales activas obtenido de la funcion Filtrar_activas
-        if status:
-            filtro_activas = destino.Filtrar_activas(parametros)
-            if filtro_activas == "fallido":
-                status = False
-
         # cargo un diccionario terminal/prioridad/solicitures con el valor devuelto por la funcion Generar_nuevo_lote
         if status:
-            nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro, filtro_activas)
+            nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro)
             if terminales_miembro == "fallido":
                 status = False
 
         # Llamo la funcion Anexar_lote para incorporar las nuevas terminales al proceso de migracion
         if status:
-            accion.Anexar_lote(parametros, nuevo_lote)
+            status = accion.Anexar_lote(parametros, nuevo_lote)
 
         if not(status):
 

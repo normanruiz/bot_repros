@@ -31,7 +31,7 @@
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 11/05/2022.
-# ULTIMA ACTUALIZACION: 24/06/2022.
+# ULTIMA ACTUALIZACION: 20/07/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -67,9 +67,6 @@
 # Ejecutar_consulta_destino() | dict | Ejecutra la query contra la base de     |
 #                              datos que genera el listado de terminales ya    |
 #                              presentes en el circuito de la automatizacion.  |
-#----------------+--------+----------------------------------------------------|
-# Ejecutar_consulta() | list | Consulta la base de datos para recuperar las    |
-#                               terminales activas.                            |
 #----------------+--------+----------------------------------------------------|
 # Insertar_nuevos() | int | Ejecutra la nonquery contra la base de             |
 #                              datos que inserta las nuevas terminales al      |
@@ -270,47 +267,6 @@ def Ejecutar_consulta_destino(conexion, ubicacion, consulta):
         log.Escribir_log(mensaje)
     except Exception as excepcion:
         print("  ERROR - Ejecutando consulta a destino:", excepcion)
-        mensaje = "ERROR - Ejecutando query :" + str(excepcion)
-        log.Escribir_log(mensaje)
-    finally:
-        if cursor:
-            cursor.close()
-            mensaje = "Destruyendo cursor..."
-            log.Escribir_log(mensaje)
-        return data
-
-#---------------------------------------------------------------------------
-# FUNCION   : list Ejecutar_consulta(objeto_conexion, str, str)
-# ACCION    : Consulta la base de datos para recuperar las terminales activas
-# PARAMETROS: objeto_conexion, la conexion a utilizar
-#             str, la base de datos a donde apuntar
-#             str, la query que se ejecutara
-# DEVUELVE  : list, coleccion de terminales activas
-#---------------------------------------------------------------------------
-def Ejecutar_consulta(conexion, ubicacion, consulta):
-    data = []
-    cursor = None
-    try:
-        mensaje = "Ejecutando query contra " + ubicacion + "..."
-        log.Escribir_log(mensaje)
-        mensaje = "Query: " + consulta
-        log.Escribir_log(mensaje)
-        mensaje = "Generando cursor..."
-        log.Escribir_log(mensaje)
-        cursor = conexion.cursor()
-        mensaje = "Comenzando lectura de datos..."
-        log.Escribir_log(mensaje)
-        cursor = conexion.cursor()
-        cursor.execute(consulta)
-        registro = cursor.fetchone()
-        if registro:
-            while registro:
-                data.append(registro.terminal)
-                registro = cursor.fetchone()
-        mensaje = "Lectura de datos finalizada..."
-        log.Escribir_log(mensaje)
-    except Exception as excepcion:
-        print("  ERROR - Ejecutando consulta:", excepcion)
         mensaje = "ERROR - Ejecutando query :" + str(excepcion)
         log.Escribir_log(mensaje)
     finally:

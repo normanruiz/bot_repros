@@ -31,7 +31,7 @@
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 05/55/2022.
-# ULTIMA ACTUALIZACION: 24/06/2022.
+# ULTIMA ACTUALIZACION: 20/07/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -58,8 +58,6 @@
 #================+========+====================================================|
 # Buscar_terminales_miembro() |  dict  | Busca terminales ya en proceso de     |
 #                                        migracion.                            |
-#----------------+--------+----------------------------------------------------|
-# Filtrar_activas() |  list  | Devuelve un listado de terminales activas.      |
 #----------------+--------+----------------------------------------------------|
 # ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
 #================+========+====================================================|
@@ -149,54 +147,6 @@ def Buscar_terminales_miembro(parametros):
 # PARAMETROS:
 # DEVUELVE  :
 #---------------------------------------------------------------------------
-
-#***************************************************************************
-#                        FUNCIONES PARA LINUX
-#===========================================================================
-# FUNCION   : list Filtrar_activas(dict)
-# ACCION    : Devuelve un listado de terminales activas.
-# PARAMETROS: dict, diccionario con las terminales y sus respectivas
-#             reprogramaciones pendientes.
-# DEVUELVE  : list, listado de terminales activas.
-#---------------------------------------------------------------------------
-def Filtrar_activas(parametros):
-    conexion = None
-    ubicacion ="data_additionals"
-    consulta = parametros["data_conection"][ubicacion]["query"]
-    filtro_activas = []
-    count = 0
-    status = True
-    try:
-        mensaje = "Buscando terminales activas..."
-        print(" ", mensaje)
-        log.Escribir_log(mensaje)
-        conexion = data_conection.Conectar(parametros, ubicacion)
-        if conexion:
-            filtro_activas = data_conection.Ejecutar_consulta(conexion, ubicacion, consulta)
-            mensaje = "Terminales activas detectadas: " + str(len(filtro_activas))
-            print(" ", mensaje)
-            log.Escribir_log(mensaje)
-            mensaje = "Subproceso finalizado..."
-            print(" ", mensaje)
-            log.Escribir_log(mensaje)
-        else:
-            status = False
-    except Exception as excepcion:
-        filtro_activas = "fallido"
-        status = False
-        mensaje = "ERROR - Filtrando terminales activas: " + str(excepcion)
-        print(" ", mensaje)
-        log.Escribir_log(mensaje)
-    finally:
-        if not(status):
-            mensaje = "WARNING!!! - Subproceso interrumpido..."
-            print(" ", mensaje)
-            log.Escribir_log(mensaje)
-        if conexion:
-            data_conection.Desconectar(conexion, ubicacion)
-        print()
-        log.Escribir_log("--------------------------------------------------------------------------------")
-        return filtro_activas
 
 #***************************************************************************
 #                        FUNCIONES PARA WINDOWS

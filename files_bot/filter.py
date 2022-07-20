@@ -31,7 +31,7 @@
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 05/05/2022.
-# ULTIMA ACTUALIZACION: 24/06/2022.
+# ULTIMA ACTUALIZACION: 20/07/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -155,7 +155,7 @@ def Resolicitar(terminal_candidata, terminales_miembro):
 #             list, listado de terminales activas
 # DEVUELVE  : dict, el lote de terminales a procesar.
 #---------------------------------------------------------------------------
-def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro, filtro_activas):
+def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro):
     nuevo_lote = {}
     status = True
     count_i = 0
@@ -168,22 +168,21 @@ def Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro, fi
         print(" ", mensaje)
         log.Escribir_log(mensaje)
         for terminal_candidata, repros in terminales_candidatas.items():
-            if terminal_candidata in filtro_activas:
-                if terminal_candidata in terminales_miembro.keys():
-                    if terminales_miembro[terminal_candidata][0] == 'U':
-                        nuevo_lote[terminal_candidata] = ["u", Resolicitar(terminal_candidata, terminales_miembro)]
-                        count_u += 1
-                    else:
-                        count_i += 1
+            if terminal_candidata in terminales_miembro.keys():
+                if terminales_miembro[terminal_candidata][0] == 'U':
+                    nuevo_lote[terminal_candidata] = ["u", Resolicitar(terminal_candidata, terminales_miembro)]
+                    count_u += 1
                 else:
-                    prioridad = Priorizar(parametros, repros)
-                    nuevo_lote[terminal_candidata] = ["i", prioridad]
-                    if prioridad == 1:
-                        count_i1 += 1
-                    elif prioridad == 2:
-                        count_i2 += 1
-                    else:
-                        count_i3 += 1
+                    count_i += 1
+            else:
+                prioridad = Priorizar(parametros, repros)
+                nuevo_lote[terminal_candidata] = ["i", prioridad]
+                if prioridad == 1:
+                    count_i1 += 1
+                elif prioridad == 2:
+                    count_i2 += 1
+                else:
+                    count_i3 += 1
         mensaje = "Se genero un lote con: " + str(len(nuevo_lote)) + " terminales..."
         print(" ", mensaje)
         log.Escribir_log(mensaje)
