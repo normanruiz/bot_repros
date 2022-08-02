@@ -117,7 +117,7 @@ def main():
             terminales_candidatas = origen.Buscar_candidatas(parametros)
             if terminales_candidatas == "fallido":
                 status = False
-
+        status = True
         # Cargo un diccionario de terminales con el valor devuelto por la funcion Buscar_terminales_miembro
         if status:
             terminales_miembro = destino.Buscar_terminales_miembro(parametros)
@@ -129,7 +129,7 @@ def main():
             nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro)
             if terminales_miembro == "fallido":
                 status = False
-
+        status = False
         # Llamo la funcion Anexar_lote para incorporar las nuevas terminales al proceso de migracion
         if status:
             status = accion.Anexar_lote(parametros, nuevo_lote)

@@ -76,6 +76,7 @@
 #=============================================================================
 import files_bot.logger as log
 import files_bot.conection as data_conection
+from threading import Thread
 
 #*****************************************************************************
 #                             INCLUSIONES PARA WINDOWS
@@ -113,27 +114,55 @@ def Anexar_lote(parametros, nuevo_lote):
     nonquery_i = parametros["data_conection"][ubicacion]["nonquery_i"]
     nonquery_u = parametros["data_conection"][ubicacion]["nonquery_u"]
     cursor = None
+    threads = []
+    thread = 0
+    count = 0
+    max_threads = parametros["max_multithread"]
+
+
     try:
         mensaje = "Aplicando los cambios del nuevo lote..."
         print(" ", mensaje)
-        log.Escribir_log(mensaje)
-        conexion = data_conection.Conectar(parametros, ubicacion)
+        #log.Escribir_log(mensaje)
+        #conexion = data_conection.Conectar(parametros, ubicacion)
         mensaje = "Ejecunatdo nonquerys contra " + ubicacion + "..."
         log.Escribir_log(mensaje)
         mensaje = "Nonquery insert: " + nonquery_i
         log.Escribir_log(mensaje)
         mensaje = "Nonquery update: " + nonquery_u
         log.Escribir_log(mensaje)
-        mensaje = "Generando cursor... "
-        log.Escribir_log(mensaje)
-        cursor = conexion.cursor()
+        #mensaje = "Generando cursor... "
+        #log.Escribir_log(mensaje)
+        #cursor = conexion.cursor()
         mensaje = "Comenzando escritura de datos..."
         log.Escribir_log(mensaje)
+
+	    # Busco la cantidad de terminales que debo procesar
+        registros = len(nuevo_lote)
+
+	    # Calculo cuantas terminales por thread debo enviar
+        if (registros % max_threads != 0):
+            registros += max_threads
+
+        registros_threds = registros // max_threads
+
         for terminal, accion in nuevo_lote.items():
-            if accion[0] == 'i':
-                count_i += data_conection.Insertar_nuevos(conexion, cursor, nonquery_i, terminal, accion[1])
-            else:
-                count_u += data_conection.Actualizar_existentes(conexion, cursor, nonquery_u, terminal, accion[1])
+            threadsregistros[termial] = accion
+            count += 1
+            if (count == registros_threds):
+                conexion = data_conection.Conectar(parametros, ubicacion)
+                threads.append(Thread(target=Impactar_cambio, args=(conexion, ubicacion, nonquery_i, nonquery_u, threadsregistros)))
+                count = 0
+                thread += 1
+                threads.clear()
+                print(" Cargue hilo ", thread - 1)
+
+        for thread in threads:
+        	thread.start()
+
+        for thread in threads:
+        	thread.join()
+
         mensaje = "Escritura de datos finalizada..."
         log.Escribir_log(mensaje)
         mensaje = "Se incorporaron " + str(count_i) + " terminales..."
@@ -156,12 +185,12 @@ def Anexar_lote(parametros, nuevo_lote):
             print(" ", mensaje)
             log.Escribir_log("--------------------------------------------------------------------------------")
             log.Escribir_log(mensaje)
-        if cursor:
-            cursor.close()
-            mensaje = "Destruyendo cursor..."
-            log.Escribir_log(mensaje)
-        if conexion:
-            data_conection.Desconectar(conexion, ubicacion)
+    #    if cursor:
+    #        cursor.close()
+    #        mensaje = "Destruyendo cursor..."
+    #        log.Escribir_log(mensaje)
+    #    if conexion:
+    #        data_conection.Desconectar(conexion, ubicacion)
         return status
 
 #---------------------------------------------------------------------------
@@ -170,6 +199,16 @@ def Anexar_lote(parametros, nuevo_lote):
 # PARAMETROS:
 # DEVUELVE  :
 #---------------------------------------------------------------------------
+def Impactar_cambio(conexion, ubicacion, nonquery_i, nonquery_u, nuevo_lote):
+        cursor = conexion.cursor()
+        for terminal, accion in nuevo_lote.items():
+            if accion[0] == 'i':
+                count_i += data_conection.Insertar_nuevos(conexion, cursor, nonquery_i, terminal, accion[1])
+            else:
+                count_u += data_conection.Actualizar_existentes(conexion, cursor, nonquery_u, terminal, accion[1])
+        cursor.close()
+        data_conection.Desconectar(conexion, ubicacion)
+
 
 #***************************************************************************
 #                        FUNCIONES PARA WINDOWS

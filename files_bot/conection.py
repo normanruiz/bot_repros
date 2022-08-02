@@ -183,9 +183,6 @@ def Ejecutar_consulta_origen(conexion, ubicacion, consulta):
         cursor = conexion.cursor()
         mensaje = "Comenzando lectura de datos..."
         log.Escribir_log(mensaje)
-
-
-
         cursor.execute(consulta)
         registro = cursor.fetchone()
         if registro:
@@ -195,14 +192,11 @@ def Ejecutar_consulta_origen(conexion, ubicacion, consulta):
                     aux_repro.append(str(registro[1]).replace(' ', ''))
                 else:
                     data[aux_terminal] = list(aux_repro)
-                    aux_terminal = str(int(registro[0]))
+                    aux_terminal = str(registro[0])
                     aux_repro.clear()
                     aux_repro.append(str(registro[1]).replace(' ', ''))
                 registro = cursor.fetchone()
             data[aux_terminal] = list(aux_repro)
-
-
-
         mensaje = "Lectura de datos finalizada..."
         log.Escribir_log(mensaje)
     except Exception as excepcion:
