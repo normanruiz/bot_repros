@@ -31,7 +31,7 @@
 # COLABORADORES       : No aplica.
 # VERSION             : 1.00 estable.
 # FECHA DE CREACION   : 05/05/2022.
-# ULTIMA ACTUALIZACION: 20/07/2022.
+# ULTIMA ACTUALIZACION: 04/08/2022.
 # LICENCIA            : GPL (General Public License) - Version 3.
 #=============================================================================
 # SISTEMA OPERATIVO   : Linux NT-9992031 4.4.0-19041-Microsoft
@@ -59,7 +59,8 @@
 # Anexar_lote()  |  bool  | Inserta y/o actualiza el nuevo lote de terminales  |
 #                           en el proceso de migracion.                        |
 #----------------+--------+----------------------------------------------------|
-# ejemplo2()     |  bool  | Hace algo para el ejemplo2.                        |
+# Impactar_cambio() |  void  | Ejecuta l Llama a la accion de insert o update  |
+#                              en la base de datos.                            |
 #================+========+====================================================|
 #
 #-------------------------------------------------------------------------------
@@ -118,44 +119,42 @@ def Anexar_lote(parametros, nuevo_lote):
     thread = 0
     count = 0
     max_threads = parametros["max_multithread"]
+    threadsregistros = {}
 
 
     try:
         mensaje = "Aplicando los cambios del nuevo lote..."
         print(" ", mensaje)
-        #log.Escribir_log(mensaje)
-        #conexion = data_conection.Conectar(parametros, ubicacion)
         mensaje = "Ejecunatdo nonquerys contra " + ubicacion + "..."
         log.Escribir_log(mensaje)
         mensaje = "Nonquery insert: " + nonquery_i
         log.Escribir_log(mensaje)
         mensaje = "Nonquery update: " + nonquery_u
         log.Escribir_log(mensaje)
-        #mensaje = "Generando cursor... "
-        #log.Escribir_log(mensaje)
-        #cursor = conexion.cursor()
+
         mensaje = "Comenzando escritura de datos..."
         log.Escribir_log(mensaje)
 
-	    # Busco la cantidad de terminales que debo procesar
         registros = len(nuevo_lote)
 
-	    # Calculo cuantas terminales por thread debo enviar
         if (registros % max_threads != 0):
             registros += max_threads
 
         registros_threds = registros // max_threads
 
         for terminal, accion in nuevo_lote.items():
-            threadsregistros[termial] = accion
+            threadsregistros[terminal] = list(accion)
             count += 1
             if (count == registros_threds):
                 conexion = data_conection.Conectar(parametros, ubicacion)
-                threads.append(Thread(target=Impactar_cambio, args=(conexion, ubicacion, nonquery_i, nonquery_u, threadsregistros)))
+                threads.append(Thread(target=Impactar_cambio, args=(conexion, ubicacion, nonquery_i, nonquery_u, dict(threadsregistros))))
                 count = 0
-                thread += 1
-                threads.clear()
-                print(" Cargue hilo ", thread - 1)
+                threadsregistros.clear()
+
+        conexion = data_conection.Conectar(parametros, ubicacion)
+        threads.append(Thread(target=Impactar_cambio, args=(conexion, ubicacion, nonquery_i, nonquery_u, dict(threadsregistros))))
+        count = 0
+        threadsregistros.clear()
 
         for thread in threads:
         	thread.start()
@@ -164,12 +163,6 @@ def Anexar_lote(parametros, nuevo_lote):
         	thread.join()
 
         mensaje = "Escritura de datos finalizada..."
-        log.Escribir_log(mensaje)
-        mensaje = "Se incorporaron " + str(count_i) + " terminales..."
-        print(" ", mensaje)
-        log.Escribir_log(mensaje)
-        mensaje = "Se resolicitaron " + str(count_u) + " terminales..."
-        print(" ", mensaje)
         log.Escribir_log(mensaje)
         mensaje = "Subproceso finalizado..."
         print(" ", mensaje)
@@ -185,27 +178,26 @@ def Anexar_lote(parametros, nuevo_lote):
             print(" ", mensaje)
             log.Escribir_log("--------------------------------------------------------------------------------")
             log.Escribir_log(mensaje)
-    #    if cursor:
-    #        cursor.close()
-    #        mensaje = "Destruyendo cursor..."
-    #        log.Escribir_log(mensaje)
-    #    if conexion:
-    #        data_conection.Desconectar(conexion, ubicacion)
+
         return status
 
 #---------------------------------------------------------------------------
-# FUNCION   :
-# ACCION    :
-# PARAMETROS:
-# DEVUELVE  :
+# FUNCION   : void Impactar_cambio(objeto_conexion, string, string, string, dict)
+# ACCION    : Inserta y/o actualiza el nuevo lote de terminales en el proceso de migracion.
+# PARAMETROS: objeto_conexion, la conecion contra la base de datos
+#             string, la ubicacion  a la que apunta la conexion
+#             string, la nonquery para los insert
+#             string, la nonquery para los update
+#             dict, el lote de terminales a impactar
+# DEVUELVE  : void, no devuelve nada.
 #---------------------------------------------------------------------------
 def Impactar_cambio(conexion, ubicacion, nonquery_i, nonquery_u, nuevo_lote):
         cursor = conexion.cursor()
         for terminal, accion in nuevo_lote.items():
             if accion[0] == 'i':
-                count_i += data_conection.Insertar_nuevos(conexion, cursor, nonquery_i, terminal, accion[1])
+                data_conection.Insertar_nuevos(conexion, cursor, nonquery_i, terminal, accion[1])
             else:
-                count_u += data_conection.Actualizar_existentes(conexion, cursor, nonquery_u, terminal, accion[1])
+                data_conection.Actualizar_existentes(conexion, cursor, nonquery_u, terminal, accion[1])
         cursor.close()
         data_conection.Desconectar(conexion, ubicacion)
 

@@ -129,7 +129,7 @@ def main():
             nuevo_lote = filtro.Generar_nuevo_lote(parametros, terminales_candidatas, terminales_miembro)
             if terminales_miembro == "fallido":
                 status = False
-        status = False
+        
         # Llamo la funcion Anexar_lote para incorporar las nuevas terminales al proceso de migracion
         if status:
             status = accion.Anexar_lote(parametros, nuevo_lote)
